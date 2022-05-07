@@ -198,3 +198,135 @@ Definition pred (n : nat) : nat :=
 
 End NatPlayground.
 Check (S (S (S (S O)))).
+
+
+Definition minustwo (n : nat) : nat :=
+  match n with
+  | O => O
+  | S O => O
+  | S (S n') => n'
+  end.
+Compute (minustwo 4).
+(* ===> 2 : nat *)
+
+(*The constructor S has the type nat \u2192 nat, just like functions such as pred and minustwo:*)
+Check S : nat -> nat.
+Check pred : nat -> nat.
+Check minustwo : nat -> nat.
+
+(*For most interesting computations involving numbers, simple pattern matching is not enough:
+ we also need recursion. For example, to check that a number n is even, we may need to recursively 
+check whether n-2 is even. Such functions are introduced with the keyword Fixpoint instead of Definition.*)
+Fixpoint even (n:nat) : bool :=
+  match n with
+  | O => true
+  | S O => false
+  | S (S n') => even n'
+  end.
+
+(*We could define odd by a similar Fixpoint declaration, but here is a simpler way:*)
+Definition odd (n:nat) : bool :=
+  negb (even n).
+Example test_odd1: odd 1 = true.
+Proof. simpl. reflexivity. Qed.
+Example test_odd2: odd 4 = false.
+Proof. simpl. reflexivity. Qed.
+
+Module NatPlayground2.
+Fixpoint plus (n : nat) (m : nat) : nat :=
+  match n with
+  | O => m
+  | S n' => S (plus n' m)
+  end.
+(*Adding three to two now gives us five, as we'd expect.*)
+Compute (plus 3 2).
+(* ===> 5 : nat *)
+
+Fixpoint mult (n m : nat) : nat :=
+  match n with
+  | O => O
+  | S n' =>  plus m (mult n' m)
+  end.
+Example test_mult1: (mult 3 3) = 9.
+Proof. simpl. reflexivity. Qed.
+
+
+(*You can match two expressions at once by putting a comma between them:*)
+Fixpoint minus (n m:nat) : nat :=
+  match n, m with
+  | O , _ => O
+  | S _ , O => n
+  | S n', S m' => minus n' m'
+  end.
+End NatPlayground2.
+Fixpoint exp (base power : nat) : nat :=
+  match power with
+  | O => S O
+  | S p => mult base (exp base p)
+  end.
+
+(*Exercise: 1 star, standard (factorial)
+Recall the standard mathematical factorial function:
+       factorial(0)  =  1
+       factorial(n)  =  n * factorial(n-1)     (if n>0)
+Translate this into Coq.*)
+Fixpoint factorial (n:nat) : nat  :=
+  match n with
+  | O => S O
+  | S n' => mult n (factorial n')
+  end.
+Example test_factorial1: (factorial 3) = 6.
+Proof. reflexivity.  Qed.
+Example test_factorial2: (factorial 5) = (mult 10 12).
+Proof. reflexivity.  Qed.
+
+Fixpoint eqb (n m : nat) : bool :=
+  match n with
+  | O => match m with
+         | O => true
+         | S m' => false
+         end
+  | S n' => match m with
+            | O => false
+            | S m' => eqb n' m'
+            end
+  end.
+(*Similarly, the leb function tests whether its first argument is less than or equal to its 
+second argument, yielding a boolean.*)
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | O => true
+  | S n' =>
+      match m with
+      | O => false
+      | S m' => leb n' m'
+      end
+  end.
+Example test_leb1: leb 2 2 = true.
+Proof. simpl. reflexivity. Qed.
+Example test_leb2: leb 2 4 = true.
+Proof. simpl. reflexivity. Qed.
+Example test_leb3: leb 4 2 = false.
+Proof. simpl. reflexivity. Qed.
+(*We'll be using these (especially eqb) a lot, so let's give them infix notations.
+Notation "x =? y" := (eqb x y) (at level 70) : nat_scope.*)
+Notation "x <=? y" := (leb x y) (at level 70) : nat_scope.
+Example test_leb3': (4 <=? 2) = false.
+Proof. simpl. reflexivity. Qed.
+(*We now have two symbols that look like equality: = and =?. We'll have much more to say about 
+the differences and similarities between them later. For now, the main thing to notice is that 
+x = y is a logical claim -- a "proposition" -- that we can try to prove, while x =? y is an expression
+ whose value (either true or false) we can compute.*)
+Definition ltb (n m : nat) : bool :=
+  andb  (leb n m) (negb (eqb n m)).
+
+Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
+Example test_ltb1: (ltb 2 2) = false.
+Proof. simpl. reflexivity. Qed.
+Example test_ltb2: (ltb 2 4) = true.
+Proof. simpl. reflexivity. Qed.
+Example test_ltb3: (ltb 4 2) = false.
+Proof. simpl. reflexivity. Qed.
+
+
+
